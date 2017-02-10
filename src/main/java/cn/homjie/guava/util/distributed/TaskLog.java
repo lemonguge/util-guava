@@ -22,15 +22,6 @@ public enum TaskLog {
 		this.log = log;
 	}
 
-	public static TaskLog byName(String name) {
-		TaskLog[] values = TaskLog.values();
-		for (TaskLog repayType : values) {
-			if (repayType.name().equals(name))
-				return repayType;
-		}
-		return null;
-	}
-
 	public String log() {
 		return log;
 	}
