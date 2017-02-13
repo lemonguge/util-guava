@@ -9,58 +9,54 @@ import com.google.common.collect.Lists;
 public class Distributed {
 
 	private Description description;
-	// 当前位置
-	transient private int point = 0;
 
-	private List<TaskRelate> relates = Lists.newArrayList();
+	private boolean incTimes = true;
+
+	private List<TaskAgent<?>> agents = Lists.newArrayList();
 
 	public Distributed(Description description) {
 		this.description = description;
 	}
 
-	public TaskRelate register(Executable forktask) {
-		return register(forktask, null, null);
+	public <T> TaskAgent<T> register(Executable<T> business) {
+		return register(business, null, null);
 	}
 
-	public TaskRelate register(Executable forktask, Executable rollback) {
-		return register(forktask, null, rollback);
+	public <T> TaskAgent<T> register(Executable<T> business, Executable<Void> rollback) {
+		return register(business, null, rollback);
 	}
 
-	public TaskRelate register(Executable forktask, String taskName) {
-		return register(forktask, taskName, null);
+	public <T> TaskAgent<T> register(Executable<T> business, String taskName) {
+		return register(business, taskName, null);
 	}
 
-	public TaskRelate register(Executable forktask, String taskName, Executable rollback) {
-		if (forktask == null)
+	public <T> TaskAgent<T> register(Executable<T> business, String taskName, Executable<Void> rollback) {
+		if (business == null)
 			throw new NullPointerException("任务为空");
-		TaskRelate relate = null;
-		int times = description.getTimes();
-		if (times == 0) {
-			relate = new TaskRelate(new TaskInfo());
-			relates.add(relate);
-		} else {
-			relate = relates.get(point);
-			point++;
+		if (incTimes) {
+			description.incTimes();
+			incTimes = false;
 		}
+		ForkTask<T> task = new ForkTask<T>();
+		ForkTaskInfo<T> info = description.info();
 
-		TaskInfo info = relate.info();
+		TaskAgent<T> agent = new TaskAgent<T>(task, info, this);
+		agents.add(agent);
+
 		if (StringUtils.isBlank(taskName))
-			taskName = "任务" + relates.size();
-		info.setTaskName(taskName);
-		info.setForktask(forktask);
-		info.setRollback(rollback);
-		info.setDescriptionId(description.getId());
-		return relate;
+			taskName = "任务" + agents.size();
+		task.setBusiness(business);
+		task.setRollback(rollback);
+
+		return agent;
 	}
 
-	public void execute() throws Exception {
-		int times = description.getTimes();
-		try {
-			description.getTransaction().execute(relates, times);
-		} catch (Exception e) {
-			description.incTimes();
-			throw e;
-		}
+	Description getDescription() {
+		return description;
+	}
+
+	List<TaskAgent<?>> getAgents() {
+		return agents;
 	}
 
 }

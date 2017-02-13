@@ -8,7 +8,7 @@ import com.google.common.collect.Lists;
 
 /**
  * @Class Description
- * @Description 信息
+ * @Description 服务信息
  * @Author JieHong
  * @Date 2017年1月11日 下午4:05:10
  */
@@ -16,20 +16,25 @@ public class Description implements Serializable {
 
 	private static final long serialVersionUID = -3941038773069693258L;
 
-	// 执行次数
-	private int times = 0;
-	// 当前位置
-	transient private int point = 0;
+	// 事务处理
+	private Transaction transaction;
 
 	// 当前主键
 	private String id;
 	// 父级主键
 	private String pid;
 
-	// 事务处理
-	private Transaction transaction;
+	// 执行次数
+	private int times = 0;
 
-	// 子info集合
+	// 当前任务信息
+	transient private int pointInfos = 0;
+	// 所有任务信息
+	private List<ForkTaskInfo<?>> infos = Lists.newArrayList();
+
+	// 当前子服务信息位置
+	transient private int pointChildren = 0;
+	// 所有子服务信息
 	private List<Description> children = Lists.newArrayList();
 
 	public Description(Transaction transaction) {
@@ -41,33 +46,64 @@ public class Description implements Serializable {
 		return transaction;
 	}
 
-	public Description child() {
-		if (times == 0) {
-			Description child = instance();
-			return child;
+	@SuppressWarnings("unchecked")
+	<T> ForkTaskInfo<T> info() {
+		if (firstTime()) {
+			ForkTaskInfo<T> info = addInfo();
+			return info;
 		} else {
-			Description child = children.get(point);
-			if (child == null) {
-				child = instance();
-			}
-			point++;
-			return child;
+			int size = infos.size();
+			int point = pointInfos;
+
+			pointInfos++;
+
+			if (point < size)
+				return (ForkTaskInfo<T>) infos.get(point);
+			return addInfo();
 		}
 	}
 
-	private Description instance() {
+	private <T> ForkTaskInfo<T> addInfo() {
+		ForkTaskInfo<T> info = new ForkTaskInfo<T>();
+		info.setDescriptionId(id);
+		infos.add(info);
+		return info;
+	}
+
+	public Description child() {
+		if (firstTime()) {
+			Description child = addDesc();
+			return child;
+		} else {
+			int size = children.size();
+			int point = pointChildren;
+
+			pointChildren++;
+
+			if (point < size)
+				return children.get(point);
+			return addDesc();
+		}
+	}
+
+	private Description addDesc() {
 		Description child = new Description(transaction);
 		child.pid = id;
 		children.add(child);
 		return child;
 	}
 
-	public int getTimes() {
-		return times;
+	void incTimes() {
+		times++;
 	}
 
-	public void incTimes() {
-		times++;
+	boolean firstTime() {
+		// 会先调用incTimes()
+		return times == 1;
+	}
+
+	public int getTimes() {
+		return times;
 	}
 
 	public String getId() {

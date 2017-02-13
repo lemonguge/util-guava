@@ -1,8 +1,8 @@
 package cn.homjie.guava.util.distributed;
 
 @FunctionalInterface
-public interface Executable {
+public interface Executable<T> {
 
-	void handle() throws Exception;
+	T handle() throws Exception;
 
 }

@@ -1,9 +1,11 @@
 package cn.homjie.guava.util.distributed;
 
-public enum TaskLog {
+public enum TaskStatus {
 
 	SUCCESS("执行成功"),
-
+	 
+	EXCEPTION("执行异常"),
+ 
 	FAILURE("执行失败"),
 
 	ROLLBACK_SUCCESS("执行成功，之后出现异常，调用回滚成功"),
@@ -12,13 +14,13 @@ public enum TaskLog {
 
 	ROLLBACK_FAILURE("执行成功，之后出现异常，调用回滚异常"),
 
-	MSGREPLY_FAILURE("执行失败，即将进行消息重试补偿"),
+	EVENTUAL_FAILURE("执行失败，即将进行消息重试补偿"),
 
-	MSGREPLY_IGNORE("执行忽略，即将进行消息重试补偿");
+	EVENTUAL_IGNORE("执行忽略，即将进行消息重试补偿");
 
 	private String log;
 
-	private TaskLog(String log) {
+	private TaskStatus(String log) {
 		this.log = log;
 	}
 
