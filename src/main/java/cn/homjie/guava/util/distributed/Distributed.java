@@ -12,25 +12,41 @@ public class Distributed {
 
 	private boolean incTimes = true;
 
-	private List<TaskAgent<?>> agents = Lists.newArrayList();
+	private List<ForkTask<?>> tasks = Lists.newArrayList();
 
 	public Distributed(Description description) {
 		this.description = description;
 	}
 
-	public <T> TaskAgent<T> register(Executable<T> business) {
-		return register(business, null, null);
+	public void execute(NulExecutable business) throws Exception {
+		execute(business, null, null);
 	}
 
-	public <T> TaskAgent<T> register(Executable<T> business, Executable<Void> rollback) {
-		return register(business, null, rollback);
+	public void execute(NulExecutable business, Executable<Void> rollback) throws Exception {
+		execute(business, null, rollback);
 	}
 
-	public <T> TaskAgent<T> register(Executable<T> business, String taskName) {
-		return register(business, taskName, null);
+	public void execute(NulExecutable business, String taskName) throws Exception {
+		execute(business, taskName, null);
 	}
 
-	public <T> TaskAgent<T> register(Executable<T> business, String taskName, Executable<Void> rollback) {
+	public void execute(NulExecutable business, String taskName, Executable<Void> rollback) throws Exception {
+		execute((Executable<Void>) business, taskName, rollback);
+	}
+
+	public <T> TaskResult<T> execute(Executable<T> business) throws Exception {
+		return execute(business, null, null);
+	}
+
+	public <T> TaskResult<T> execute(Executable<T> business, Executable<Void> rollback) throws Exception {
+		return execute(business, null, rollback);
+	}
+
+	public <T> TaskResult<T> execute(Executable<T> business, String taskName) throws Exception {
+		return execute(business, taskName, null);
+	}
+
+	public <T> TaskResult<T> execute(Executable<T> business, String taskName, Executable<Void> rollback) throws Exception {
 		if (business == null)
 			throw new NullPointerException("任务为空");
 		if (incTimes) {
@@ -40,56 +56,24 @@ public class Distributed {
 		ForkTask<T> task = new ForkTask<T>();
 		ForkTaskInfo<T> info = description.info();
 
-		TaskAgent<T> agent = new TaskAgent<T>(task, info, this);
-		agents.add(agent);
+		tasks.add(task);
 
 		if (StringUtils.isBlank(taskName))
-			taskName = "任务" + agents.size();
+			taskName = "任务" + tasks.size();
 		task.setBusiness(business);
 		task.setRollback(rollback);
 
-		return agent;
-	}
-
-	public  TaskAgent<Void> register(NulExecutable business) {
-		return register(business, null, null);
-	}
-
-	public TaskAgent<Void> register(NulExecutable business, Executable<Void> rollback) {
-		return register(business, null, rollback);
-	}
-
-	public TaskAgent<Void> register(NulExecutable business, String taskName) {
-		return register(business, taskName, null);
-	}
-
-	public TaskAgent<Void> register(NulExecutable business, String taskName, Executable<Void> rollback) {
-		if (business == null)
-			throw new NullPointerException("任务为空");
-		if (incTimes) {
-			description.incTimes();
-			incTimes = false;
-		}
-		ForkTask<Void> task = new ForkTask<Void>();
-		ForkTaskInfo<Void> info = description.info();
-
-		TaskAgent<Void> agent = new TaskAgent<Void>(task, info, this);
-		agents.add(agent);
-
-		if (StringUtils.isBlank(taskName))
-			taskName = "任务" + agents.size();
-		task.setBusiness(business);
-		task.setRollback(rollback);
-
-		return agent;
+		Transaction transaction = description.getTransaction();
+		transaction.execute(task, info, this);
+		return info.getResult();
 	}
 
 	Description getDescription() {
 		return description;
 	}
 
-	List<TaskAgent<?>> getAgents() {
-		return agents;
+	List<ForkTask<?>> getTasks() {
+		return tasks;
 	}
 
 }
