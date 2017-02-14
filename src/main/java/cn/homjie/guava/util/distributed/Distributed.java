@@ -51,6 +51,39 @@ public class Distributed {
 		return agent;
 	}
 
+	public  TaskAgent<Void> register(NulExecutable business) {
+		return register(business, null, null);
+	}
+
+	public TaskAgent<Void> register(NulExecutable business, Executable<Void> rollback) {
+		return register(business, null, rollback);
+	}
+
+	public TaskAgent<Void> register(NulExecutable business, String taskName) {
+		return register(business, taskName, null);
+	}
+
+	public TaskAgent<Void> register(NulExecutable business, String taskName, Executable<Void> rollback) {
+		if (business == null)
+			throw new NullPointerException("任务为空");
+		if (incTimes) {
+			description.incTimes();
+			incTimes = false;
+		}
+		ForkTask<Void> task = new ForkTask<Void>();
+		ForkTaskInfo<Void> info = description.info();
+
+		TaskAgent<Void> agent = new TaskAgent<Void>(task, info, this);
+		agents.add(agent);
+
+		if (StringUtils.isBlank(taskName))
+			taskName = "任务" + agents.size();
+		task.setBusiness(business);
+		task.setRollback(rollback);
+
+		return agent;
+	}
+
 	Description getDescription() {
 		return description;
 	}

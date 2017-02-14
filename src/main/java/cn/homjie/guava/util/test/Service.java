@@ -12,14 +12,13 @@ public class Service {
 		
 		distributed.register(() -> new Server1().call(false, description.child())).run();
 		
-		TaskAgent<String> agent2 = distributed.register(() -> new Server2().call(true, description.child()).get());
+		TaskAgent<String> agent2 = distributed.register(() -> {
+			return new Server2().call(true, description.child()).get();
+		});
 		
-		distributed.register(() -> {
-			new Server3().call(false, agent2.run().get(), description.child());
-			return null;
-		}).run();
+		distributed.register(() -> new Server3().call(false, agent2.run().get(), description.child())).run();
 		
-		return null;
+		return TaskResult.VOID_FAILURE;
 		
 	}
 
