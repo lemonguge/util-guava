@@ -5,19 +5,18 @@ import java.io.Serializable;
 public class TaskResult<T> implements Serializable {
 
 	private static final long serialVersionUID = -3144849695440150966L;
-	
-	static final TaskResult<Void> VOID_SUCCESS = new TaskResult<Void>(true);
-	static final TaskResult<Void> VOID_FAILURE = new TaskResult<Void>(false);
+
+	public static final TaskResult<Void> VOID = new TaskResult<Void>();
 
 	private T result;
 
 	private Throwable ex;
 
 	private boolean success;
-	
-	private TaskResult(boolean success) {
+
+	private TaskResult() {
 		this.result = null;
-		this.success = success;
+		this.success = true;
 	}
 
 	TaskResult(T result) {

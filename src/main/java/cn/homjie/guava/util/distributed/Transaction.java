@@ -4,20 +4,21 @@ import java.util.List;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
+import com.google.common.collect.Lists;
+
 public enum Transaction {
 
 	ROLLBACK {
 
 		@Override
 		<T> void firstExec(ForkTask<T> task, ForkTaskInfo<T> info, Distributed distributed) throws Exception {
-			// 二次调用
+			// 只有成功才有结果，否则抛出异常
 			if (info.getResult() != null)
 				return;
 			Throwable ex = null;
 			try {
 				T result = task.getBusiness().handle();
-				TaskResult<T> taskResult = new TaskResult<T>(result);
-				info.setResult(taskResult);
+				info.setResult(new TaskResult<T>(result));
 				info.setTaskStatus(TaskStatus.SUCCESS.name());
 				return;
 			} catch (RollbackFailureException e) {
@@ -36,11 +37,11 @@ public enum Transaction {
 
 			// 回滚是否出现异常
 			boolean exception = false;
-			List<TaskAgent<?>> agents = distributed.getAgents();
-			for (TaskAgent<?> taskAgent : agents) {
-				if (task == taskAgent.getTask())
+			List<ForkTask<?>> tasks = distributed.getTasks();
+			for (ForkTask<?> forktask : tasks) {
+				if (task == forktask)
 					break;
-				Executable<Void> rollback = taskAgent.getTask().getRollback();
+				Executable<Void> rollback = forktask.getRollback();
 				if (rollback != null) {
 					try {
 						rollback.handle();
@@ -85,43 +86,42 @@ public enum Transaction {
 
 		@Override
 		<T> void firstExec(ForkTask<T> task, ForkTaskInfo<T> info, Distributed distributed) throws Exception {
+			// 只有状态不为空才有结果
+			if (info.getTaskStatus() != null)
+				return;
 			exec(task, info);
 		}
 
 		@Override
 		<T> void retryExec(ForkTask<T> task, ForkTaskInfo<T> info, Distributed distributed) throws Exception {
-			exec(task, info);
+
+			String taskStatus = info.getTaskStatus();
+			if (RETRY_STATUS.contains(taskStatus)) {
+				exec(task, info);
+			}
 		}
 
 		private <T> void exec(ForkTask<T> task, ForkTaskInfo<T> info) {
-			// 二次调用
-			if (info.getTaskStatus() != null)
-				return;
 			try {
 				T result = task.getBusiness().handle();
-				TaskResult<T> taskResult = new TaskResult<T>(result);
-				info.setResult(taskResult);
+				info.setResult(new TaskResult<T>(result));
 				info.setTaskStatus(TaskStatus.SUCCESS.name());
 			} catch (DistributedException e) {
-				TaskResult<T> taskResult = new TaskResult<T>(e.getCause());
-				info.setResult(taskResult);
+				info.setResult(new TaskResult<T>(e.getCause()));
 				info.setTaskStatus(TaskStatus.EVENTUAL_IGNORE.name());
-				// TODO 持久化
 			} catch (Exception e) {
-				TaskResult<T> taskResult = new TaskResult<T>(e);
-				info.setResult(taskResult);
+				info.setResult(new TaskResult<T>(e));
 				info.setTaskStatus(TaskStatus.EVENTUAL_EXCEPTION.name());
 				info.setStackTrace(ExceptionUtils.getStackTrace(e));
-				// TODO 持久化
 			}
 		}
 
 	};
 
-	public <T> void execute(TaskAgent<T> agent) throws Exception {
-		ForkTask<T> task = agent.getTask();
-		ForkTaskInfo<T> info = agent.getInfo();
-		Distributed distributed = agent.getDistributed();
+	private static final List<String> RETRY_STATUS = Lists.newArrayList(TaskStatus.EVENTUAL_FAILURE.name(), TaskStatus.EVENTUAL_EXCEPTION.name(),
+			TaskStatus.EVENTUAL_IGNORE.name());
+
+	public <T> void execute(ForkTask<T> task, ForkTaskInfo<T> info, Distributed distributed) throws Exception {
 		if (distributed.getDescription().firstTime()) {
 			firstExec(task, info, distributed);
 		} else

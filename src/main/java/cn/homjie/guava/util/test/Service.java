@@ -2,24 +2,21 @@ package cn.homjie.guava.util.test;
 
 import cn.homjie.guava.util.distributed.Description;
 import cn.homjie.guava.util.distributed.Distributed;
-import cn.homjie.guava.util.distributed.TaskAgent;
 import cn.homjie.guava.util.distributed.TaskResult;
 
 public class Service {
 
-	public TaskResult<Void> call(Description description) throws Exception {
+	public void call(Description description) throws Exception {
 		Distributed distributed = new Distributed(description);
-		
-		distributed.register(() -> new Server1().call(false, description.child())).run();
-		
-		TaskAgent<String> agent2 = distributed.register(() -> {
-			return new Server2().call(true, description.child()).get();
-		});
-		
-		distributed.register(() -> new Server3().call(false, agent2.run().get(), description.child())).run();
-		
-		return TaskResult.VOID_FAILURE;
-		
+
+		distributed.execute(() -> new ServerA().call(false, description.child()), "Service taskS-A");
+
+		TaskResult<String> tr2 = distributed.execute(() -> {
+			return new ServerB().call(true, description.child()).get();
+		}, "Service taskS-B");
+
+		distributed.execute(() -> new ServerC().call(false, tr2.get(), description.child()), "Service taskS-C");
+
 	}
 
 }

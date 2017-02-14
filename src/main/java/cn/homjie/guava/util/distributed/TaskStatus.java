@@ -16,6 +16,8 @@ public enum TaskStatus {
 
 	ROLLBACK_EXCEPTION("执行成功，之后出现异常，调用回滚异常"),
 
+	EVENTUAL_FAILURE("执行失败，即将进行消息重试补偿"),
+
 	EVENTUAL_EXCEPTION("执行异常，即将进行消息重试补偿"),
 
 	EVENTUAL_IGNORE("执行忽略，即将进行消息重试补偿");
