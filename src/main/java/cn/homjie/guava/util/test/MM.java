@@ -14,8 +14,8 @@ public class MM {
 
 	public static void main(String[] args) throws Exception {
 
-		// first();
-		again();
+		first();
+		// again();
 	}
 
 	static void first() throws Exception {
