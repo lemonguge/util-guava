@@ -16,7 +16,7 @@ public class ServerB {
 				System.out.println("远程调用服务B");
 		}, "ServiceB task");
 
-		TaskResult<String> tr1 = distributed.execute(() -> {
+		TaskResult<String> tr1 = distributed.acquire(() -> {
 			return new Dao21().call();
 		}, "ServiceB taskD-1");
 
@@ -25,7 +25,7 @@ public class ServerB {
 			new Dao22().call(result);
 		}, "ServiceB taskD-2");
 
-		TaskResult<String> tr2 = distributed.execute(() -> {
+		TaskResult<String> tr2 = distributed.acquire(() -> {
 			String result = tr1.get();
 			return new Dao23().call(result);
 		}, "ServiceB taskD-3");

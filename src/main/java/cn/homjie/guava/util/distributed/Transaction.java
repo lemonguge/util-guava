@@ -11,7 +11,7 @@ public enum Transaction {
 	ROLLBACK {
 
 		@Override
-		<T> void firstExec(ForkTask<T> task, ForkTaskInfo<T> info, Distributed distributed) throws Exception {
+		public <T> void firstExec(ForkTask<T> task, ForkTaskInfo<T> info, List<ForkTask<?>> tasks) throws Exception {
 			// 只有成功才有结果，否则抛出异常
 			if (info.getResult() != null)
 				return;
@@ -37,7 +37,6 @@ public enum Transaction {
 
 			// 回滚是否出现异常
 			boolean exception = false;
-			List<ForkTask<?>> tasks = distributed.getTasks();
 			for (ForkTask<?> forktask : tasks) {
 				if (task == forktask)
 					break;
@@ -73,7 +72,7 @@ public enum Transaction {
 		}
 
 		@Override
-		<T> void retryExec(ForkTask<T> task, ForkTaskInfo<T> info, Distributed distributed) throws Exception {
+		public <T> void retryExec(ForkTask<T> task, ForkTaskInfo<T> info, List<ForkTask<?>> tasks) throws Exception {
 			if (TaskStatus.ROLLBACK_FAILURE.name().equals(info.getTaskStatus())) {
 				task.getBusiness().handle();
 			} else if (TaskStatus.ROLLBACK_EXCEPTION.name().equals(info.getTaskStatus())) {
@@ -85,7 +84,7 @@ public enum Transaction {
 	EVENTUAL {
 
 		@Override
-		<T> void firstExec(ForkTask<T> task, ForkTaskInfo<T> info, Distributed distributed) throws Exception {
+		public <T> void firstExec(ForkTask<T> task, ForkTaskInfo<T> info, List<ForkTask<?>> tasks) throws Exception {
 			// 只有状态不为空才有结果
 			if (info.getTaskStatus() != null)
 				return;
@@ -93,8 +92,7 @@ public enum Transaction {
 		}
 
 		@Override
-		<T> void retryExec(ForkTask<T> task, ForkTaskInfo<T> info, Distributed distributed) throws Exception {
-
+		public <T> void retryExec(ForkTask<T> task, ForkTaskInfo<T> info, List<ForkTask<?>> tasks) throws Exception {
 			String taskStatus = info.getTaskStatus();
 			if (RETRY_STATUS.contains(taskStatus)) {
 				exec(task, info);
@@ -121,16 +119,8 @@ public enum Transaction {
 	private static final List<String> RETRY_STATUS = Lists.newArrayList(TaskStatus.EVENTUAL_FAILURE.name(), TaskStatus.EVENTUAL_EXCEPTION.name(),
 			TaskStatus.EVENTUAL_IGNORE.name());
 
-	public <T> void execute(ForkTask<T> task, ForkTaskInfo<T> info, Distributed distributed) throws Exception {
-		if (distributed.getDescription().firstTime()) {
-			firstExec(task, info, distributed);
-		} else
-			retryExec(task, info, distributed);
+	public abstract <T> void firstExec(ForkTask<T> task, ForkTaskInfo<T> info, List<ForkTask<?>> tasks) throws Exception;
 
-	}
-
-	abstract <T> void firstExec(ForkTask<T> task, ForkTaskInfo<T> info, Distributed distributed) throws Exception;
-
-	abstract <T> void retryExec(ForkTask<T> task, ForkTaskInfo<T> info, Distributed distributed) throws Exception;
+	public abstract <T> void retryExec(ForkTask<T> task, ForkTaskInfo<T> info, List<ForkTask<?>> tasks) throws Exception;
 
 }

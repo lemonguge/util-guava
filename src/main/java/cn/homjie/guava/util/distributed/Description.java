@@ -28,12 +28,12 @@ public class Description implements Serializable {
 	private int times = 0;
 
 	// 当前任务信息
-	transient private int pointInfos = 0;
+	private int pointInfos = 0;
 	// 所有任务信息
 	private List<ForkTaskInfo<?>> infos = Lists.newArrayList();
 
 	// 当前子服务信息位置
-	transient private int pointChildren = 0;
+	private int pointChildren = 0;
 	// 所有子服务信息
 	private List<Description> children = Lists.newArrayList();
 
@@ -94,6 +94,9 @@ public class Description implements Serializable {
 	}
 
 	void incTimes() {
+		// 初始化索引
+		pointInfos = 0;
+		pointChildren = 0;
 		times++;
 	}
 

@@ -11,7 +11,7 @@ public class Service {
 
 		distributed.execute(() -> new ServerA().call(false, description.child()), "Service taskS-A");
 
-		TaskResult<String> tr2 = distributed.execute(() -> {
+		TaskResult<String> tr2 = distributed.acquire(() -> {
 			return new ServerB().call(true, description.child()).get();
 		}, "Service taskS-B");
 

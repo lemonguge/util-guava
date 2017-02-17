@@ -9,8 +9,8 @@ import com.google.common.collect.Lists;
 public class Distributed {
 
 	private Description description;
-
-	private boolean incTimes = true;
+	// 触发一次，则增加执行次数
+	private boolean once = true;
 
 	private List<ForkTask<?>> tasks = Lists.newArrayList();
 
@@ -31,27 +31,27 @@ public class Distributed {
 	}
 
 	public void execute(NulExecutable business, String taskName, Executable<Void> rollback) throws Exception {
-		execute((Executable<Void>) business, taskName, rollback);
+		acquire((Executable<Void>) business, taskName, rollback);
 	}
 
-	public <T> TaskResult<T> execute(Executable<T> business) throws Exception {
-		return execute(business, null, null);
+	public <T> TaskResult<T> acquire(Executable<T> business) throws Exception {
+		return acquire(business, null, null);
 	}
 
-	public <T> TaskResult<T> execute(Executable<T> business, Executable<Void> rollback) throws Exception {
-		return execute(business, null, rollback);
+	public <T> TaskResult<T> acquire(Executable<T> business, Executable<Void> rollback) throws Exception {
+		return acquire(business, null, rollback);
 	}
 
-	public <T> TaskResult<T> execute(Executable<T> business, String taskName) throws Exception {
-		return execute(business, taskName, null);
+	public <T> TaskResult<T> acquire(Executable<T> business, String taskName) throws Exception {
+		return acquire(business, taskName, null);
 	}
 
-	public <T> TaskResult<T> execute(Executable<T> business, String taskName, Executable<Void> rollback) throws Exception {
+	public <T> TaskResult<T> acquire(Executable<T> business, String taskName, Executable<Void> rollback) throws Exception {
 		if (business == null)
 			throw new NullPointerException("任务为空");
-		if (incTimes) {
+		if (once) {
 			description.incTimes();
-			incTimes = false;
+			once = false;
 		}
 		ForkTask<T> task = new ForkTask<T>();
 		ForkTaskInfo<T> info = description.info();
@@ -64,7 +64,12 @@ public class Distributed {
 		task.setRollback(rollback);
 
 		Transaction transaction = description.getTransaction();
-		transaction.execute(task, info, this);
+
+		if (description.firstTime()) {
+			transaction.firstExec(task, info, tasks);
+		} else
+			transaction.retryExec(task, info, tasks);
+
 		return info.getResult();
 	}
 
