@@ -22,7 +22,7 @@ public class Distributed {
 		execute(business, null, null);
 	}
 
-	public void execute(NulExecutable business, Executable<Void> rollback) throws Exception {
+	public void execute(NulExecutable business, NulExecutable rollback) throws Exception {
 		execute(business, null, rollback);
 	}
 
@@ -30,7 +30,7 @@ public class Distributed {
 		execute(business, taskName, null);
 	}
 
-	public void execute(NulExecutable business, String taskName, Executable<Void> rollback) throws Exception {
+	public void execute(NulExecutable business, String taskName, NulExecutable rollback) throws Exception {
 		acquire((Executable<Void>) business, taskName, rollback);
 	}
 
@@ -38,7 +38,7 @@ public class Distributed {
 		return acquire(business, null, null);
 	}
 
-	public <T> TaskResult<T> acquire(Executable<T> business, Executable<Void> rollback) throws Exception {
+	public <T> TaskResult<T> acquire(Executable<T> business, NulExecutable rollback) throws Exception {
 		return acquire(business, null, rollback);
 	}
 
@@ -46,7 +46,7 @@ public class Distributed {
 		return acquire(business, taskName, null);
 	}
 
-	public <T> TaskResult<T> acquire(Executable<T> business, String taskName, Executable<Void> rollback) throws Exception {
+	public <T> TaskResult<T> acquire(Executable<T> business, String taskName, NulExecutable rollback) throws Exception {
 		if (business == null)
 			throw new NullPointerException("任务为空");
 		if (once) {

@@ -4,7 +4,7 @@ public class ForkTask<T> {
 
 	private String taskName;
 	private Executable<T> business;
-	private Executable<Void> rollback;
+	private NulExecutable rollback;
 
 	public String getTaskName() {
 		return taskName;
@@ -22,11 +22,11 @@ public class ForkTask<T> {
 		this.business = business;
 	}
 
-	public Executable<Void> getRollback() {
+	public NulExecutable getRollback() {
 		return rollback;
 	}
 
-	public void setRollback(Executable<Void> rollback) {
+	public void setRollback(NulExecutable rollback) {
 		this.rollback = rollback;
 	}
 
