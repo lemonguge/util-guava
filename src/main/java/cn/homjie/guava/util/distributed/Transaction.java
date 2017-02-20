@@ -20,6 +20,7 @@ public enum Transaction {
 				T result = task.getBusiness().handle();
 				info.setResult(new TaskResult<T>(result));
 				info.setTaskStatus(TaskStatus.SUCCESS.name());
+				// 执行成功，立即返回
 				return;
 			} catch (RollbackFailureException e) {
 				info.setTaskStatus(TaskStatus.ROLLBACK_FAILURE.name());
@@ -36,17 +37,17 @@ public enum Transaction {
 			}
 
 			// 回滚是否出现异常
-			boolean exception = false;
+			boolean rollbackException = false;
 			for (ForkTask<?> forktask : tasks) {
 				if (task == forktask)
 					break;
-				Executable<Void> rollback = forktask.getRollback();
+				NulExecutable rollback = forktask.getRollback();
 				if (rollback != null) {
 					try {
-						rollback.handle();
+						rollback.handleWithoutResult();
 						info.setTaskStatus(TaskStatus.ROLLBACK_SUCCESS.name());
 					} catch (Exception e) {
-						exception = true;
+						rollbackException = true;
 						info.setTaskStatus(TaskStatus.ROLLBACK_EXCEPTION.name());
 						info.setStackTrace(ExceptionUtils.getStackTrace(e));
 					}
@@ -62,7 +63,7 @@ public enum Transaction {
 				if (ex instanceof RollbackSuccessException) {
 					ex = ex.getCause();
 				}
-				if (exception) {
+				if (rollbackException) {
 					// TODO 持久化
 					throw new RollbackFailureException(ex);
 				} else
@@ -116,6 +117,7 @@ public enum Transaction {
 
 	};
 
+	// EVENTUAL_FAILURE 进行重试分析后会将 SUCCESS 修改
 	private static final List<String> RETRY_STATUS = Lists.newArrayList(TaskStatus.EVENTUAL_FAILURE.name(), TaskStatus.EVENTUAL_EXCEPTION.name(),
 			TaskStatus.EVENTUAL_IGNORE.name());
 
