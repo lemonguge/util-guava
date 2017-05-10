@@ -8,7 +8,7 @@ package cn.homjie.guava.util.demo;
  */
 public interface LineMatcher {
 
-	boolean predicate(String line);
+	boolean predicate(int lineNumber, String line);
 
 	String out(int lineNumber, String line);
 

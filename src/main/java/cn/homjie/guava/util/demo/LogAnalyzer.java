@@ -53,24 +53,27 @@ public class LogAnalyzer {
 				stackTraceNum++;
 				continue;
 			}
+			int lineNumber = lnr.getLineNumber();
 			if (stackTrace.length() > 0) {
 				String exception = stackTrace.toString();
-				if (matcher.predicate(exception))
-					log.info(matcher.out(lnr.getLineNumber() - stackTraceNum, exception));
-				
+				if (matcher.predicate(lineNumber - stackTraceNum, exception))
+					log.info(matcher.out(lineNumber - stackTraceNum, exception));
+
 				// 清空
 				stackTrace.setLength(0);
 				stackTraceNum = 0;
 			}
-			if (matcher.predicate(line)) {
-				log.info(matcher.out(lnr.getLineNumber(), line));
+			if (matcher.predicate(lineNumber, line)) {
+				String out = matcher.out(lineNumber, line);
+				if (out != null)
+					log.info(out);
 			}
 		}
 		lnr.close();
 	}
 
 	private boolean isStackTrace(String line) {
-		if(line.length() < 10)
+		if (line.length() < 10)
 			return true;
 		String date = line.substring(0, 10);
 		try {
