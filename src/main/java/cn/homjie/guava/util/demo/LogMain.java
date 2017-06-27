@@ -74,7 +74,6 @@ public class LogMain {
 					e.printStackTrace();
 				}
 			});
-
 		}
 		
 		executors.shutdown();

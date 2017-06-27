@@ -56,8 +56,11 @@ public class LogAnalyzer {
 			int lineNumber = lnr.getLineNumber();
 			if (stackTrace.length() > 0) {
 				String exception = stackTrace.toString();
-				if (matcher.predicate(lineNumber - stackTraceNum, exception))
-					log.info(matcher.out(lineNumber - stackTraceNum, exception));
+				if (matcher.predicate(lineNumber - stackTraceNum, exception)) {
+					String out = matcher.out(lineNumber - stackTraceNum, exception);
+					if (out != null)
+						System.out.println(out);
+				}
 
 				// 清空
 				stackTrace.setLength(0);
@@ -66,7 +69,7 @@ public class LogAnalyzer {
 			if (matcher.predicate(lineNumber, line)) {
 				String out = matcher.out(lineNumber, line);
 				if (out != null)
-					log.info(out);
+					System.out.println(out);
 			}
 		}
 		lnr.close();
