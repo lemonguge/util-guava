@@ -14,7 +14,7 @@ public class ProductzLogMain {
 		
 		@Override
 		public boolean predicate(int lineNumber, String line) {
-			return StringUtils.containsIgnoreCase(line, "F882B6CBBF844BFD9528448EAC60BE7E") && StringUtils.containsIgnoreCase(line, "信用卡账单更新数据");
+			return StringUtils.containsIgnoreCase(line, "4986C7942DB842388CA16D18A10BB438") && StringUtils.containsIgnoreCase(line, "信用卡账单更新数据");
 		}
 
 		@Override
